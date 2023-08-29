@@ -8,7 +8,7 @@ class ModrinthQueue {
   private queue: PQueue;
   private remainingRequests: number;
   private resetTime: number;
-  api: AxiosInstance;
+  private api: AxiosInstance;
 
   constructor(userAgent: string) {
     this.queue = new PQueue({ concurrency: CONCURRENCY }); // Adjust concurrency as needed
@@ -29,7 +29,7 @@ class ModrinthQueue {
     this.resetTime = Number(response.headers['x-ratelimit-reset']);
   }
 
-  async enqueueRequest<T>(url: string) {
+  async get<T>(url: string) {
     const task = async () => {
       if (this.remainingRequests <= CONCURRENCY) {
         const waitTime = this.resetTime + 10;
