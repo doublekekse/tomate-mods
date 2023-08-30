@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import PQueue from 'p-queue';
 
-const API_BASE_URL = 'https://api.modrinth.com/v2/';
+const API_BASE_URL = 'https://api.modrinth.com/v2';
 const CONCURRENCY = 5;
 
 class ModrinthQueue {
@@ -18,7 +18,6 @@ class ModrinthQueue {
     this.api = axios.create({
       baseURL: API_BASE_URL,
       headers: {
-        // User agent
         'User-Agent': userAgent,
       },
     });
