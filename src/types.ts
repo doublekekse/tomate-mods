@@ -21,7 +21,7 @@ export type InstalledModMetadata = {
   dependencies: {
     id?: string | undefined;
     version?: string | undefined;
-    dependency_type: 'required' | 'optional' | 'incompatible' | 'embedded';
+    dependencyType: 'required' | 'optional' | 'incompatible' | 'embedded';
   }[];
   authors: string[];
 } & (

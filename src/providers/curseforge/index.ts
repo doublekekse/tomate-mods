@@ -6,10 +6,12 @@ import {
   SearchResult,
 } from '../../types';
 import {
+  CF2Addon,
   CF2File,
   CF2FileRelationType,
   CF2GameId,
   CF2GetAddonResponse,
+  CF2GetFingerprintMatchesResponse,
   CF2GetModFileResponse,
   CF2GetModFilesResponse,
   CF2HashAlgo,
@@ -18,6 +20,7 @@ import {
 import fs from 'fs';
 import checkModFile from '../../checkModFile';
 import { IncomingMessage } from 'http';
+import murmur2 from 'murmur2';
 
 const API_BASE_URL = 'https://api.curseforge.com/';
 
@@ -46,6 +49,22 @@ export class CurseforgeApi {
 
     const version = await this.getVersion(mod);
 
+    return this.installedModMetadata(
+      mod,
+      version,
+      metadata,
+      modLoader,
+      gameVersions
+    );
+  }
+
+  private async installedModMetadata(
+    mod: { id: string; version: string },
+    version: CF2File,
+    metadata: CF2Addon,
+    modLoader: ModLoader,
+    gameVersions: string[]
+  ): Promise<InstalledModMetadata> {
     let updateVersion = null;
 
     if (metadata.latestFiles[0].id.toString() !== mod.version) {
@@ -71,7 +90,7 @@ export class CurseforgeApi {
       authors: metadata.authors.map((author) => author.name),
 
       dependencies: version.dependencies.map((dependency) => {
-        let dependency_type:
+        let dependencyType:
           | 'required'
           | 'optional'
           | 'incompatible'
@@ -80,16 +99,16 @@ export class CurseforgeApi {
         switch (dependency.relationType) {
           case CF2FileRelationType.Include:
           case CF2FileRelationType.EmbeddedLibrary:
-            dependency_type = 'embedded';
+            dependencyType = 'embedded';
             break;
           case CF2FileRelationType.Incompatible:
-            dependency_type = 'incompatible';
+            dependencyType = 'incompatible';
             break;
           case CF2FileRelationType.RequiredDependency:
-            dependency_type = 'required';
+            dependencyType = 'required';
             break;
           case CF2FileRelationType.OptionalDependency:
-            dependency_type = 'optional';
+            dependencyType = 'optional';
             break;
           default:
             throw new Error(
@@ -99,9 +118,9 @@ export class CurseforgeApi {
         }
 
         return {
-          dependency_type,
-          project_id: dependency.modId.toString(),
-          version_id: dependency.fileId.toString(),
+          dependencyType,
+          id: dependency.modId.toString(),
+          version: dependency.fileId.toString(),
         };
       }),
 
@@ -217,5 +236,40 @@ export class CurseforgeApi {
 
       this.download(mod, downloadPath, downloadPopup, retry);
     }
+  }
+
+  async fileMetadata(
+    modPath: string,
+    modLoader: ModLoader,
+    gameVersions: string[]
+  ) {
+    const hash = murmur2(fs.readFileSync(modPath), 1, true);
+    const hash2 = murmur2(fs.readFileSync(modPath), 1, false);
+
+    const {
+      data: {
+        data: { exactMatches: fingerprintMatches },
+      },
+    } = await this.api.post<CF2GetFingerprintMatchesResponse>(
+      `/v1/fingerprints`,
+      {
+        fingerprints: [hash, hash2],
+      }
+    );
+
+    if (!fingerprintMatches) throw new Error('Failed to get fingerprints');
+    const match = fingerprintMatches[0];
+    if (!match) throw new Error('Failed to get fingerprints');
+
+    const { file } = match;
+
+    return this.getInstalledModMetadata(
+      {
+        id: file.modId.toString(),
+        version: file.id.toString(),
+      },
+      modLoader,
+      gameVersions
+    );
   }
 }

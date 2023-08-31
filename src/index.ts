@@ -224,4 +224,30 @@ export class TomateMods {
 
     throw new InvalidModProviderError();
   }
+
+  async fileMetadata(
+    modPath: string,
+    modLoader: ModLoader,
+    gameVersions: string[]
+  ) {
+    try {
+      return await this.modrinthApi.fileMetadata(
+        modPath,
+        modLoader,
+        gameVersions
+      );
+    } catch (e) {}
+
+    try {
+      if (!this.curseforgeApi) throw new NoCurseforgeApiKeyError();
+
+      return await this.curseforgeApi.fileMetadata(
+        modPath,
+        modLoader,
+        gameVersions
+      );
+    } catch (e) {}
+
+    return this.parseMod(modPath);
+  }
 }

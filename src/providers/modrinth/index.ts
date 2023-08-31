@@ -6,6 +6,7 @@ import fs from 'fs';
 import checkModFile from '../../checkModFile';
 import axios from 'axios';
 import { IncomingMessage } from 'http';
+import crypto from 'crypto';
 
 export class ModrinthApi {
   private api: ModrinthQueue;
@@ -36,20 +37,17 @@ export class ModrinthApi {
     return this.api.get<ProjectVersion>(`/version/${mod.version}`);
   }
 
-  async getInstalledModMetadata(
+  private async installedModMetadata(
     mod: { id: string; version: string },
+    project: Project,
+    version: ProjectVersion,
+    teamMembers: { user: User }[],
     modLoader: ModLoader,
     gameVersions: string[]
   ): Promise<InstalledModMetadata> {
-    const project = await this.api.get<Project>(`/project/${mod.id}`);
-    const version = await this.getVersion(mod);
-    const teamMembers = await this.api.get<{ user: User }[]>(
-      `/project/${mod.id}/members`
-    );
-
     let updateVersion = null;
 
-    if (project.data.versions[0] !== mod.version) {
+    if (project.versions[0] !== mod.version) {
       const latestVersion = await this.findVersion(
         mod,
         modLoader,
@@ -62,19 +60,44 @@ export class ModrinthApi {
     }
 
     return {
-      id: project.data.id,
+      id: project.id,
       version: mod.version,
       provider: 'modrinth',
 
-      name: project.data.title,
-      description: project.data.description,
-      slug: project.data.slug,
-      authors: teamMembers.data.map((member) => member.user.name),
+      name: project.title,
+      description: project.description,
+      slug: project.slug,
+      authors: teamMembers.map((member) => member.user.name),
 
-      dependencies: version.data.dependencies,
+      dependencies: version.dependencies.map((dependency) => ({
+        id: dependency.project_id,
+        version: dependency.version_id,
+        dependencyType: dependency.dependency_type,
+      })),
 
       updateVersion,
     };
+  }
+
+  async getInstalledModMetadata(
+    mod: { id: string; version: string },
+    modLoader: ModLoader,
+    gameVersions: string[]
+  ): Promise<InstalledModMetadata> {
+    const project = await this.api.get<Project>(`/project/${mod.id}`);
+    const version = await this.getVersion(mod);
+    const teamMembers = await this.api.get<{ user: User }[]>(
+      `/project/${mod.id}/members`
+    );
+
+    return this.installedModMetadata(
+      mod,
+      project.data,
+      version.data,
+      teamMembers.data,
+      modLoader,
+      gameVersions
+    );
   }
 
   async searchMods(
@@ -145,6 +168,34 @@ export class ModrinthApi {
 
       this.download(mod, downloadPath, retry);
     }
+  }
+
+  async fileMetadata(
+    modPath: string,
+    modLoader: ModLoader,
+    gameVersions: string[]
+  ) {
+    const modFile = fs.readFileSync(modPath);
+    const modHash = crypto.createHash('sha1').update(modFile).digest('hex');
+
+    const { data: version } = await this.api.get<ProjectVersion>(
+      `/version_file/${modHash}?algorithm=sha1`
+    );
+    const { data: project } = await this.api.get<Project>(
+      `/project/${version.project_id}`
+    );
+    const { data: teamMembers } = await this.api.get<{ user: User }[]>(
+      `/project/${project.id}/members`
+    );
+
+    return this.installedModMetadata(
+      { id: project.id, version: version.id },
+      project,
+      version,
+      teamMembers,
+      modLoader,
+      gameVersions
+    );
   }
 }
 
