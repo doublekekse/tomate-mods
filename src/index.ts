@@ -9,6 +9,7 @@ import {
   Provider,
   SearchResult,
 } from './types';
+import { readFabricMod, readQuiltMod } from '@xmcl/mod-parser';
 
 class NoCurseforgeApiKeyError extends Error {
   message = 'No curseforge api key provided; Curseforge Api can not be used';
@@ -31,30 +32,84 @@ export class TomateMods {
       this.curseforgeApi = new CurseforgeApi(userAgent, curseforgeApiKey);
   }
 
-  getInstalledModMetadata(
+  async getInstalledModMetadata(
     mod: { provider: Provider; id: string; version: string },
     modLoader: ModLoader,
-    gameVersions: string[]
+    gameVersions: string[],
+    modPath?: string
   ): Promise<InstalledModMetadata> {
-    if (mod.provider === 'modrinth') {
-      return this.modrinthApi.getInstalledModMetadata(
-        mod,
-        modLoader,
-        gameVersions
-      );
+    try {
+      if (mod.provider === 'modrinth') {
+        return await this.modrinthApi.getInstalledModMetadata(
+          mod,
+          modLoader,
+          gameVersions
+        );
+      }
+
+      if (mod.provider === 'curseforge') {
+        if (!this.curseforgeApi) throw new NoCurseforgeApiKeyError();
+
+        return await this.curseforgeApi.getInstalledModMetadata(
+          mod,
+          modLoader,
+          gameVersions
+        );
+      }
+
+      throw new InvalidModProviderError();
+    } catch (e) {
+      if (!modPath) throw e;
+
+      return this.parseMod(modPath);
     }
+  }
 
-    if (mod.provider === 'curseforge') {
-      if (!this.curseforgeApi) throw new NoCurseforgeApiKeyError();
+  async parseMod(modPath: string): Promise<InstalledModMetadata> {
+    try {
+      const fabricMod = await readFabricMod(modPath);
 
-      return this.curseforgeApi.getInstalledModMetadata(
-        mod,
-        modLoader,
-        gameVersions
-      );
-    }
+      return {
+        id: fabricMod.id,
+        version: fabricMod.version,
+        provider: 'custom',
 
-    throw new InvalidModProviderError();
+        name: fabricMod.name ?? 'Unknown name',
+        description: fabricMod.description ?? 'Unknown description',
+        slug: fabricMod.id,
+        authors: fabricMod.authors?.map((author) =>
+          typeof author === 'string' ? author : author.name
+        ) ?? ['Unknown author'],
+
+        dependencies: [], // TODO
+
+        updateVersion: null,
+      };
+    } catch (e) {}
+
+    try {
+      const quiltMod = await readQuiltMod(modPath);
+
+      return {
+        id: quiltMod.quilt_loader.id,
+        version: quiltMod.quilt_loader.version,
+        provider: 'custom',
+
+        name: quiltMod.quilt_loader.metadata?.name ?? 'Unknown name',
+        description:
+          quiltMod.quilt_loader.metadata?.description ?? 'Unknown description',
+        slug: quiltMod.quilt_loader.id,
+        authors: Object.keys(
+          quiltMod.quilt_loader.metadata?.contributors ?? {}
+        ),
+
+        dependencies: [], // TODO
+
+        updateVersion: null,
+      };
+    } catch (e) {}
+
+    throw new Error('Could not parse mod');
   }
 
   async search(

@@ -1,7 +1,7 @@
 import { CF2File } from 'curseforge-v2';
 import { Loader, ProjectVersion } from './providers/modrinth/types';
 
-export type Provider = 'curseforge' | 'modrinth';
+export type Provider = 'curseforge' | 'modrinth' | 'custom';
 
 export type ModLoader = {
   overrideMods: {
@@ -19,8 +19,8 @@ export type InstalledModMetadata = {
   description: string;
   slug: string;
   dependencies: {
-    version_id?: string | undefined;
-    project_id?: string | undefined;
+    id?: string | undefined;
+    version?: string | undefined;
     dependency_type: 'required' | 'optional' | 'incompatible' | 'embedded';
   }[];
   authors: string[];
@@ -33,6 +33,7 @@ export type InstalledModMetadata = {
       provider: 'modrinth';
       updateVersion: ProjectVersion | null;
     }
+  | { provider: 'custom'; updateVersion: null }
 );
 
 export type SearchResultHit = {
