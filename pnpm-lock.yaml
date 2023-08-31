@@ -11,6 +11,9 @@ dependencies:
   axios:
     specifier: ^1.4.0
     version: 1.5.0
+  murmur2:
+    specifier: ^1.0.2
+    version: 1.0.2
   node-fetch:
     specifier: ^3.3.2
     version: 3.3.2
@@ -213,6 +216,10 @@ packages:
     engines: {node: '>= 0.6'}
     dependencies:
       mime-db: 1.52.0
+    dev: false
+
+  /murmur2@1.0.2:
+    resolution: {integrity: sha512-r9dVsfnmykIYovQH9oP2JeZu5/DYa9rZpSQw2FWR/VDoI0oxm/u21NF46bFH5h+x2Xv4q5+jHzsX95N6m0UO3Q==}
     dev: false
 
   /node-domexception@1.0.0:
