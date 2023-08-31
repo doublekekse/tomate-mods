@@ -17,12 +17,13 @@
   },
   "homepage": "https://github.com/Tomate0613/tomate-mods#readme",
   "dependencies": {
-    "@types/node": "^20.4.2",
+    "@xmcl/mod-parser": "^3.3.3",
     "axios": "^1.4.0",
     "node-fetch": "^3.3.2",
     "p-queue": "^6.6.2"
   },
   "devDependencies": {
-    "curseforge-v2": "^1.2.0"
+    "curseforge-v2": "^1.2.0",
+    "@types/node": "^20.4.2"
   }
 }
