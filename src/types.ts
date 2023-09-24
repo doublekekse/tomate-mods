@@ -42,7 +42,7 @@ export type SearchResultHit = {
 
   name: string;
   description: string;
-  icon: string;
+  icon?: string;
   authors: string[];
   slug: string;
 };

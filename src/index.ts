@@ -118,7 +118,7 @@ export class TomateMods {
     gameVersions: string[],
     useCurseforge: boolean
   ): Promise<SearchResult> {
-    const asyncModrinthSearch = this.modrinthApi.searchMods(
+    const asyncModrinthSearch = this.modrinthApi.search(
       query,
       modLoader,
       gameVersions
@@ -126,7 +126,7 @@ export class TomateMods {
 
     let asyncCurseforgeSearch;
     if (this.curseforgeApi && useCurseforge) {
-      asyncCurseforgeSearch = this.curseforgeApi.searchMods(
+      asyncCurseforgeSearch = this.curseforgeApi.search(
         query,
         modLoader,
         gameVersions
@@ -251,3 +251,5 @@ export class TomateMods {
     return this.parseMod(modPath);
   }
 }
+
+export * from './types';

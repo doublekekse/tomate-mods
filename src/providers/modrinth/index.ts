@@ -100,7 +100,7 @@ export class ModrinthApi {
     );
   }
 
-  async searchMods(
+  async search(
     query: string,
     modLoader: ModLoader,
     gameVersions: string[]
@@ -124,16 +124,41 @@ export class ModrinthApi {
     );
 
     return {
-      hits: searchResult.data.hits.map((hit) => ({
-        id: hit.project_id,
-        provider: 'modrinth',
+      hits: await Promise.all(
+        searchResult.data.hits.map(async (hit) => {
+          if (modLoader.overrideMods[hit.project_id]) {
+            const overrideId = modLoader.overrideMods[hit.project_id];
+            const project = await this.api.get<Project>(
+              `/project/${overrideId}}`
+            );
+            const teamMembers = await this.api.get<{ user: User }[]>(
+              `/project/${overrideId}/members`
+            );
 
-        name: hit.title,
-        description: hit.description,
-        icon: hit.icon_url,
-        authors: [hit.author],
-        slug: hit.slug,
-      })),
+            return {
+              id: project.data.id,
+              provider: 'modrinth',
+
+              name: project.data.title,
+              description: project.data.description,
+              icon: project.data.icon_url,
+              authors: teamMembers.data.map((member) => member.user.name),
+              slug: project.data.slug,
+            };
+          }
+
+          return {
+            id: hit.project_id,
+            provider: 'modrinth',
+
+            name: hit.title,
+            description: hit.description,
+            icon: hit.icon_url,
+            authors: [hit.author],
+            slug: hit.slug,
+          };
+        })
+      ),
       count: searchResult.data.total_hits,
     };
   }

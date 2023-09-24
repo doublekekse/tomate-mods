@@ -128,7 +128,7 @@ export class CurseforgeApi {
     };
   }
 
-  async searchMods(
+  async search(
     query: string,
     modLoader: ModLoader,
     gameVersions: string[]
@@ -152,16 +152,41 @@ export class CurseforgeApi {
     );
 
     return {
-      hits: search.data.data.map((hit) => ({
-        id: hit.id.toString(),
-        provider: 'curseforge',
+      hits: await Promise.all(
+        search.data.data.map(async (hit) => {
+          if (modLoader.overrideMods[hit.id]) {
+            const overrideId = modLoader.overrideMods[hit.id];
 
-        name: hit.name,
-        description: hit.summary,
-        icon: hit.logo.url,
-        authors: hit.authors.map((author) => author.name),
-        slug: hit.slug,
-      })),
+            const {
+              data: { data: metadata },
+            } = await this.api.get<CF2GetAddonResponse>(
+              `/v1/mods/${overrideId}`
+            );
+
+            return {
+              id: overrideId,
+              provider: 'curseforge',
+
+              name: metadata.name,
+              description: metadata.summary,
+              icon: metadata.logo.url,
+              authors: metadata.authors.map((author) => author.name),
+              slug: metadata.slug,
+            };
+          }
+
+          return {
+            id: hit.id.toString(),
+            provider: 'curseforge',
+
+            name: hit.name,
+            description: hit.summary,
+            icon: hit.logo.url,
+            authors: hit.authors.map((author) => author.name),
+            slug: hit.slug,
+          };
+        })
+      ),
       count: search.data.pagination.totalCount,
     };
   }
