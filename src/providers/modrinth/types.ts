@@ -217,7 +217,7 @@ export type ProjectVersion = {
    * A list of specific versions of mods that this version depends on
    */
   dependencies: Array<{
-    version_id?: string; // Technically a version id is always required
+    version_id?: string;
     project_id?: string;
     dependency_type: 'required' | 'optional' | 'incompatible' | 'embedded';
   }>;
