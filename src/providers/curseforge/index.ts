@@ -67,12 +67,22 @@ export class CurseforgeApi {
   ): Promise<InstalledModMetadata> {
     let updateVersion = null;
 
-    if (metadata.latestFiles[0].id.toString() !== mod.version) {
+    if (modLoader.overrideMods[mod.id]) {
+      updateVersion =
+        (await this.findVersion(mod, modLoader, gameVersions)) ?? null;
+    }
+
+    if (
+      !updateVersion &&
+      metadata.latestFiles[0].id.toString() !== mod.version
+    ) {
       const latestVersion = await this.findVersion(
         mod,
         modLoader,
         gameVersions
       );
+
+      if (!latestVersion) throw new Error('');
 
       if (latestVersion.id.toString() !== mod.version) {
         updateVersion = latestVersion;
@@ -196,15 +206,19 @@ export class CurseforgeApi {
     modLoader: ModLoader,
     gameVersions: string[]
   ) {
-    const {
-      data: {
-        data: [version],
-      },
-    } = await this.api.get<CF2GetModFilesResponse>(
-      `v1/mods/${mod.id}/files?modId=${mod.id}&gameVersion=${gameVersions[0]}&modLoaderType=${modLoader.curseforgeCategory}`
-    );
+    try {
+      const {
+        data: {
+          data: [version],
+        },
+      } = await this.api.get<CF2GetModFilesResponse>(
+        `v1/mods/${mod.id}/files?modId=${mod.id}&gameVersion=${gameVersions[0]}&modLoaderType=${modLoader.curseforgeCategory}`
+      );
 
-    return version;
+      return version;
+    } catch (e) {
+      return undefined;
+    }
   }
 
   async getVersion(mod: { id: string; version: string }) {

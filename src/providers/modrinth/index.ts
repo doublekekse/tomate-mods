@@ -20,16 +20,20 @@ export class ModrinthApi {
     modLoader: ModLoader,
     gameVersions: string[]
   ) {
-    for (let i = 0; i < modLoader.modrinthCategories.length; i++) {
-      const versions = await this.api.get<ProjectVersion[]>(
-        `/project/${mod.id}/version?loaders=${JSON.stringify([
-          modLoader.modrinthCategories[i],
-        ])}&game_versions=${JSON.stringify(gameVersions)}`
-      );
+    try {
+      for (let i = 0; i < modLoader.modrinthCategories.length; i++) {
+        const versions = await this.api.get<ProjectVersion[]>(
+          `/project/${mod.id}/version?loaders=${JSON.stringify([
+            modLoader.modrinthCategories[i],
+          ])}&game_versions=${JSON.stringify(gameVersions)}`
+        );
 
-      if (versions.data.length > 0) {
-        return versions.data[0];
+        if (versions.data.length > 0) {
+          return versions.data[0];
+        }
       }
+    } catch (e) {
+      return undefined;
     }
   }
 
@@ -47,7 +51,18 @@ export class ModrinthApi {
   ): Promise<InstalledModMetadata> {
     let updateVersion = null;
 
-    if (project.versions[0] !== mod.version) {
+    if (modLoader.overrideMods[project.id]) {
+      updateVersion =
+        (await this.findVersion(
+          {
+            id: modLoader.overrideMods[project.id],
+          },
+          modLoader,
+          gameVersions
+        )) ?? null;
+    }
+
+    if (!updateVersion && project.versions[0] !== mod.version) {
       const latestVersion = await this.findVersion(
         mod,
         modLoader,
@@ -131,6 +146,9 @@ export class ModrinthApi {
             const project = await this.api.get<Project>(
               `/project/${overrideId}}`
             );
+
+            // TODO Check if version is available for mc version
+
             const teamMembers = await this.api.get<{ user: User }[]>(
               `/project/${overrideId}/members`
             );
