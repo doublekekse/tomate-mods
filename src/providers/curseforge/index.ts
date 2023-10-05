@@ -82,7 +82,7 @@ export class CurseforgeApi {
         gameVersions
       );
 
-      if (!latestVersion) throw new Error('');
+      if (!latestVersion) throw new Error('Could not find version');
 
       if (latestVersion.id.toString() !== mod.version) {
         updateVersion = latestVersion;
@@ -164,7 +164,7 @@ export class CurseforgeApi {
     return {
       hits: await Promise.all(
         search.data.data.map(async (hit) => {
-          if (modLoader.overrideMods[hit.id]) {
+          override: if (modLoader.overrideMods[hit.id]) {
             const overrideId = modLoader.overrideMods[hit.id];
 
             const {
@@ -172,6 +172,15 @@ export class CurseforgeApi {
             } = await this.api.get<CF2GetAddonResponse>(
               `/v1/mods/${overrideId}`
             );
+
+            if (
+              !(await this.findVersion(
+                { id: overrideId },
+                modLoader,
+                gameVersions
+              ))
+            )
+              break override;
 
             return {
               id: overrideId,

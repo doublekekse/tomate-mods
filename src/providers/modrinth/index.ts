@@ -141,13 +141,20 @@ export class ModrinthApi {
     return {
       hits: await Promise.all(
         searchResult.data.hits.map(async (hit) => {
-          if (modLoader.overrideMods[hit.project_id]) {
+          override: if (modLoader.overrideMods[hit.project_id]) {
             const overrideId = modLoader.overrideMods[hit.project_id];
+            if (
+              !(await this.findVersion(
+                { id: overrideId },
+                modLoader,
+                gameVersions
+              ))
+            )
+              break override;
+
             const project = await this.api.get<Project>(
               `/project/${overrideId}}`
             );
-
-            // TODO Check if version is available for mc version
 
             const teamMembers = await this.api.get<{ user: User }[]>(
               `/project/${overrideId}/members`

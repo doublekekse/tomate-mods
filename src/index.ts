@@ -195,6 +195,9 @@ export class TomateMods {
         gameVersions
       );
 
+      if (!version)
+        throw new Error('Could not find compatible version for mod ' + mod.id);
+
       return {
         id: mod.id,
         provider: 'curseforge' as const,
