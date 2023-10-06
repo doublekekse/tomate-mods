@@ -245,7 +245,7 @@ export class CurseforgeApi {
     downloadPath: string,
     downloadPopup?: DownloadPopup,
     retry = 5
-  ) {
+  ): Promise<void> {
     const hash = mod.version.hashes.find(
       (hash) => hash.algo === CF2HashAlgo.Sha1
     )?.value;
@@ -282,7 +282,7 @@ export class CurseforgeApi {
 
       if (--retry < 0) throw new Error('Failed to download mod');
 
-      this.download(mod, downloadPath, downloadPopup, retry);
+      return this.download(mod, downloadPath, downloadPopup, retry);
     }
   }
 

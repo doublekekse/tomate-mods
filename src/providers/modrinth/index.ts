@@ -192,7 +192,7 @@ export class ModrinthApi {
     mod: { id: string; version: ProjectVersion },
     downloadPath: string,
     retry = 5
-  ) {
+  ): Promise<void> {
     const hash = mod.version.files[0].hashes.sha1;
     const url = mod.version.files[0].url;
 
@@ -216,7 +216,7 @@ export class ModrinthApi {
 
       if (--retry < 0) throw new Error('Failed to download mod');
 
-      this.download(mod, downloadPath, retry);
+      return this.download(mod, downloadPath, retry);
     }
   }
 
