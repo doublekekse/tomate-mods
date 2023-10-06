@@ -8,6 +8,7 @@ import {
   ModLoader,
   Provider,
   SearchResult,
+  SearchResultHit,
 } from './types';
 import { readFabricMod, readQuiltMod } from '@xmcl/mod-parser';
 
@@ -137,27 +138,21 @@ export class TomateMods {
 
     const modrinthSearch = await asyncModrinthSearch;
     const curseforgeSearch = await asyncCurseforgeSearch;
+    const searchResults = {
+      hits: modrinthSearch.hits.concat(curseforgeSearch.hits),
+      count: modrinthSearch.count + curseforgeSearch.count,
+    };
 
-    curseforgeSearch.hits = curseforgeSearch.hits.filter((hit) => {
-      if (
-        modrinthSearch.hits.find(
-          (_hit) =>
-            hit.slug === _hit.slug ||
-            hit.name === _hit.name ||
-            hit.description === _hit.description
-        )
-      ) {
-        curseforgeSearch.count--;
+    searchResults.hits = searchResults.hits.filter((hit, idx) => {
+      if (searchResults.hits.find(sameMod(hit, idx))) {
+        searchResults.count--;
         return false;
       }
 
       return true;
     });
 
-    return {
-      hits: modrinthSearch.hits.concat(curseforgeSearch.hits),
-      count: modrinthSearch.count + curseforgeSearch.count,
-    };
+    return searchResults;
   }
 
   async findVersion(
@@ -253,6 +248,14 @@ export class TomateMods {
 
     return this.parseMod(modPath);
   }
+}
+
+function sameMod(hit: SearchResultHit, idx: number) {
+  return (_hit: SearchResultHit, _idx: number) =>
+    idx < _idx &&
+    (hit.slug === _hit.slug ||
+      hit.name === _hit.name ||
+      hit.description === _hit.description);
 }
 
 export * from './types';

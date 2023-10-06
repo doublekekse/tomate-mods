@@ -153,7 +153,7 @@ export class ModrinthApi {
               break override;
 
             const project = await this.api.get<Project>(
-              `/project/${overrideId}}`
+              `/project/${overrideId}`
             );
 
             const teamMembers = await this.api.get<{ user: User }[]>(
