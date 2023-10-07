@@ -1,4 +1,4 @@
-# Tomate Mods Documentation
+# Tomate Mods
 
 Tomate Mods is a JavaScript library that provides utils for working with CurseForge and Modrinth at the same time
 
