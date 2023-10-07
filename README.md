@@ -23,7 +23,7 @@ Tomate Mods is a JavaScript library that provides utils for working with CurseFo
 You can install the `tomate-mods` library using npm:
 
 ```shell
-npm install [https://gittomate-mods](https://github.com/doublekekse/tomate-mods)
+npm install github:doublekekse/tomate-mods
 ```
 
 
