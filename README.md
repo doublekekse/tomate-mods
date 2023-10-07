@@ -4,7 +4,7 @@ Tomate Mods is a JavaScript library that provides utils for working with CurseFo
 
 ## Table of Contents
 
-- [Tomate Mods Documentation](#tomate-mods-documentation)
+- [Tomate Mods](#tomate-mods)
   - [Table of Contents](#table-of-contents)
   - [Installation](#installation)
   - [Getting Started](#getting-started)
