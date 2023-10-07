@@ -108,7 +108,7 @@ const downloadPopup = async (url: string, savePath: string) => {
         });
 
         item.on('updated', (__event, state) => {
-          if (state === 'interrupted') resolve();
+          if (state === 'interrupted') reject();
 
           logger.error('Download state:', state);
         });
