@@ -1,10 +1,10 @@
-# Tomate Mods Documentation
+# Tomate Mods
 
 Tomate Mods is a JavaScript library that provides utils for working with CurseForge and Modrinth at the same time
 
 ## Table of Contents
 
-- [Tomate Mods Documentation](#tomate-mods-documentation)
+- [Tomate Mods](#tomate-mods)
   - [Table of Contents](#table-of-contents)
   - [Installation](#installation)
   - [Getting Started](#getting-started)
@@ -23,7 +23,7 @@ Tomate Mods is a JavaScript library that provides utils for working with CurseFo
 You can install the `tomate-mods` library using npm:
 
 ```shell
-npm install [https://gittomate-mods](https://github.com/doublekekse/tomate-mods)
+npm install github:doublekekse/tomate-mods
 ```
 
 
@@ -108,7 +108,7 @@ const downloadPopup = async (url: string, savePath: string) => {
         });
 
         item.on('updated', (__event, state) => {
-          if (state === 'interrupted') resolve();
+          if (state === 'interrupted') reject();
 
           logger.error('Download state:', state);
         });
