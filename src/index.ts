@@ -251,7 +251,7 @@ export class TomateMods {
   }
 
   /**
-   * Lists all dependencies and sub-dependencies
+   * Lists all dependencies
    */
   async listDependencies(
     mod:
@@ -261,22 +261,12 @@ export class TomateMods {
     gameVersions: string[]
   ): Promise<DependencyList> {
     if (mod.provider === 'modrinth') {
-      return this.modrinthApi.listDependencies(
-        mod,
-        modLoader,
-        gameVersions,
-        []
-      );
+      return this.modrinthApi.listDependencies(mod, modLoader, gameVersions);
     }
     if (mod.provider === 'curseforge') {
       if (!this.curseforgeApi) throw new NoCurseforgeApiKeyError();
 
-      return this.curseforgeApi.listDependencies(
-        mod,
-        modLoader,
-        gameVersions,
-        []
-      );
+      return this.curseforgeApi.listDependencies(mod, modLoader, gameVersions);
     }
 
     throw new InvalidModProviderError();

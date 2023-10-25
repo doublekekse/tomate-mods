@@ -253,12 +253,9 @@ export class ModrinthApi {
       version: ProjectVersion;
     },
     modLoader: ModLoader,
-    gameVersions: string[],
-    ignore: string[]
+    gameVersions: string[]
   ) {
-    const dependencies: ModrinthDependencyList = [];
-
-    await Promise.all(
+    const dependencies: ModrinthDependencyList = await Promise.all(
       mod.version.dependencies.map(async (dependency) => {
         let version: ProjectVersion | undefined;
 
@@ -275,30 +272,10 @@ export class ModrinthApi {
 
         if (!version) throw new Error('Dependency could not be found'); // TODO To se thingy better
 
-        dependencies.push({
+        return {
           parentId: mod.id,
           mod: { id: version.project_id, version, provider: 'modrinth' },
-        });
-      })
-    );
-
-    const newIgnoreIds = ignore.concat(
-      ...dependencies.map((dependency) => dependency.mod.id)
-    );
-
-    await Promise.all(
-      dependencies.map(async (dependency) => {
-        const subDependencies = await this.listDependencies(
-          dependency.mod,
-          modLoader,
-          gameVersions,
-          newIgnoreIds
-        );
-
-        dependencies.push(...subDependencies);
-        newIgnoreIds.push(
-          ...subDependencies.map((dependency) => dependency.mod.id)
-        );
+        };
       })
     );
 

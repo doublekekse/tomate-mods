@@ -330,32 +330,32 @@ export class CurseforgeApi {
       version: CF2File;
     },
     modLoader: ModLoader,
-    gameVersions: string[],
-    ignore: string[]
+    gameVersions: string[]
   ) {
-    const dependencies: CurseforgeDependencyList = [];
-
-    await Promise.all(
+    const dependencies: CurseforgeDependencyList = await Promise.all(
       mod.version.dependencies.map(async (dependency) => {
         let version: CF2File | undefined;
 
-        if(dependency.fileId) {
+        if (dependency.fileId) {
           version = await this.getVersion({
             id: dependency.modId,
             version: dependency.fileId,
           });
         } else {
-          version = await this.findVersion({id: dependency.modId.toString()}, modLoader, gameVersions);
+          version = await this.findVersion(
+            { id: dependency.modId.toString() },
+            modLoader,
+            gameVersions
+          );
         }
 
-        if(!version)
-          throw new Error('Could not find version');
-        
+        if (!version) throw new Error('Could not find version');
+
         const {
           data: { data: metadata },
         } = await this.api.get<CF2GetAddonResponse>(`/v1/mods/${mod.id}`);
 
-        dependencies.push({
+        return {
           parentId: mod.id,
           mod: {
             id: mod.id,
@@ -363,27 +363,7 @@ export class CurseforgeApi {
             provider: 'curseforge',
             slug: metadata.slug,
           },
-        });
-      })
-    );
-
-    const newIgnoreIds = ignore.concat(
-      ...dependencies.map((dependency) => dependency.mod.id)
-    );
-
-    await Promise.all(
-      dependencies.map(async (dependency) => {
-        const subDependencies = await this.listDependencies(
-          dependency.mod,
-          modLoader,
-          gameVersions,
-          newIgnoreIds
-        );
-
-        dependencies.push(...subDependencies);
-        newIgnoreIds.push(
-          ...subDependencies.map((dependency) => dependency.mod.id)
-        );
+        };
       })
     );
 
