@@ -3,6 +3,7 @@ import { CurseforgeApi } from './providers/curseforge';
 import { ModrinthApi } from './providers/modrinth';
 import { ProjectVersion } from './providers/modrinth/types';
 import {
+  DependencyList,
   DownloadPopup,
   InstalledModMetadata,
   ModLoader,
@@ -167,7 +168,7 @@ export class TomateMods {
   > {
     if (mod.provider === 'modrinth') {
       const version = await this.modrinthApi.findVersion(
-        mod,
+        mod.id,
         modLoader,
         gameVersions
       );
@@ -177,7 +178,7 @@ export class TomateMods {
 
       return {
         id: mod.id,
-        provider: 'modrinth' as const,
+        provider: 'modrinth',
         version,
       };
     }
@@ -195,7 +196,7 @@ export class TomateMods {
 
       return {
         id: mod.id,
-        provider: 'curseforge' as const,
+        provider: 'curseforge',
         version,
         slug: mod.slug,
       };
@@ -247,6 +248,38 @@ export class TomateMods {
     } catch (e) {}
 
     return this.parseMod(modPath);
+  }
+
+  /**
+   * Lists all dependencies and sub-dependencies
+   */
+  async listDependencies(
+    mod:
+      | { provider: 'modrinth'; id: string; version: ProjectVersion }
+      | { provider: 'curseforge'; id: string; version: CF2File; slug: string },
+    modLoader: ModLoader,
+    gameVersions: string[]
+  ): Promise<DependencyList> {
+    if (mod.provider === 'modrinth') {
+      return this.modrinthApi.listDependencies(
+        mod,
+        modLoader,
+        gameVersions,
+        []
+      );
+    }
+    if (mod.provider === 'curseforge') {
+      if (!this.curseforgeApi) throw new NoCurseforgeApiKeyError();
+
+      return this.curseforgeApi.listDependencies(
+        mod,
+        modLoader,
+        gameVersions,
+        []
+      );
+    }
+
+    throw new InvalidModProviderError();
   }
 }
 

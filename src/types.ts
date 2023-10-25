@@ -50,3 +50,24 @@ export type SearchResultHit = {
 export type SearchResult = { hits: SearchResultHit[]; count: number };
 
 export type DownloadPopup = (url: string, savePath: string) => unknown;
+
+export type ModrinthDependencyList = {
+  mod: {
+    provider: 'modrinth';
+    id: string;
+    version: ProjectVersion;
+  };
+  parentId?: string;
+}[];
+
+export type CurseforgeDependencyList = {
+  mod: {
+    provider: 'curseforge';
+    id: string;
+    version: CF2File;
+    slug: string;
+  };
+  parentId?: string;
+}[];
+
+export type DependencyList = ModrinthDependencyList | CurseforgeDependencyList;

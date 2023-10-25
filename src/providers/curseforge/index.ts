@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import {
+  CurseforgeDependencyList,
   DownloadPopup,
   InstalledModMetadata,
   ModLoader,
@@ -230,7 +231,7 @@ export class CurseforgeApi {
     }
   }
 
-  async getVersion(mod: { id: string; version: string }) {
+  async getVersion(mod: { id: string | number; version: string | number }) {
     const {
       data: { data: version },
     } = await this.api.get<CF2GetModFileResponse>(
@@ -319,5 +320,73 @@ export class CurseforgeApi {
       modLoader,
       gameVersions
     );
+  }
+
+  async listDependencies(
+    mod: {
+      provider: 'curseforge';
+      slug: string;
+      id: string;
+      version: CF2File;
+    },
+    modLoader: ModLoader,
+    gameVersions: string[],
+    ignore: string[]
+  ) {
+    const dependencies: CurseforgeDependencyList = [];
+
+    await Promise.all(
+      mod.version.dependencies.map(async (dependency) => {
+        let version: CF2File | undefined;
+
+        if(dependency.fileId) {
+          version = await this.getVersion({
+            id: dependency.modId,
+            version: dependency.fileId,
+          });
+        } else {
+          version = await this.findVersion({id: dependency.modId.toString()}, modLoader, gameVersions);
+        }
+
+        if(!version)
+          throw new Error('Could not find version');
+        
+        const {
+          data: { data: metadata },
+        } = await this.api.get<CF2GetAddonResponse>(`/v1/mods/${mod.id}`);
+
+        dependencies.push({
+          parentId: mod.id,
+          mod: {
+            id: mod.id,
+            version,
+            provider: 'curseforge',
+            slug: metadata.slug,
+          },
+        });
+      })
+    );
+
+    const newIgnoreIds = ignore.concat(
+      ...dependencies.map((dependency) => dependency.mod.id)
+    );
+
+    await Promise.all(
+      dependencies.map(async (dependency) => {
+        const subDependencies = await this.listDependencies(
+          dependency.mod,
+          modLoader,
+          gameVersions,
+          newIgnoreIds
+        );
+
+        dependencies.push(...subDependencies);
+        newIgnoreIds.push(
+          ...subDependencies.map((dependency) => dependency.mod.id)
+        );
+      })
+    );
+
+    return dependencies;
   }
 }

@@ -1,5 +1,11 @@
 import { stringify } from 'querystring';
-import { InstalledModMetadata, ModLoader, SearchResult } from '../../types';
+import {
+  DependencyList,
+  InstalledModMetadata,
+  ModLoader,
+  ModrinthDependencyList,
+  SearchResult,
+} from '../../types';
 import ModrinthQueue from './modrinthQueue';
 import { ModrinthSearchResult, Project, ProjectVersion, User } from './types';
 import fs from 'fs';
@@ -16,14 +22,14 @@ export class ModrinthApi {
   }
 
   async findVersion(
-    mod: { id: string },
+    modId: string,
     modLoader: ModLoader,
     gameVersions: string[]
   ) {
     try {
       for (let i = 0; i < modLoader.modrinthCategories.length; i++) {
         const versions = await this.api.get<ProjectVersion[]>(
-          `/project/${mod.id}/version?loaders=${JSON.stringify([
+          `/project/${modId}/version?loaders=${JSON.stringify([
             modLoader.modrinthCategories[i],
           ])}&game_versions=${JSON.stringify(gameVersions)}`
         );
@@ -37,8 +43,8 @@ export class ModrinthApi {
     }
   }
 
-  async getVersion(mod: { version: string }) {
-    return this.api.get<ProjectVersion>(`/version/${mod.version}`);
+  async getVersion(version: string) {
+    return this.api.get<ProjectVersion>(`/version/${version}`);
   }
 
   private async installedModMetadata(
@@ -54,9 +60,7 @@ export class ModrinthApi {
     if (modLoader.overrideMods[project.id]) {
       updateVersion =
         (await this.findVersion(
-          {
-            id: modLoader.overrideMods[project.id],
-          },
+          modLoader.overrideMods[project.id],
           modLoader,
           gameVersions
         )) ?? null;
@@ -64,7 +68,7 @@ export class ModrinthApi {
 
     if (!updateVersion && project.versions[0] !== mod.version) {
       const latestVersion = await this.findVersion(
-        mod,
+        mod.id,
         modLoader,
         gameVersions
       );
@@ -100,7 +104,7 @@ export class ModrinthApi {
     gameVersions: string[]
   ): Promise<InstalledModMetadata> {
     const project = await this.api.get<Project>(`/project/${mod.id}`);
-    const version = await this.getVersion(mod);
+    const version = await this.getVersion(mod.version);
     const teamMembers = await this.api.get<{ user: User }[]>(
       `/project/${mod.id}/members`
     );
@@ -143,13 +147,7 @@ export class ModrinthApi {
         searchResult.data.hits.map(async (hit) => {
           override: if (modLoader.overrideMods[hit.project_id]) {
             const overrideId = modLoader.overrideMods[hit.project_id];
-            if (
-              !(await this.findVersion(
-                { id: overrideId },
-                modLoader,
-                gameVersions
-              ))
-            )
+            if (!(await this.findVersion(overrideId, modLoader, gameVersions)))
               break override;
 
             const project = await this.api.get<Project>(
@@ -246,6 +244,65 @@ export class ModrinthApi {
       modLoader,
       gameVersions
     );
+  }
+
+  async listDependencies(
+    mod: {
+      provider: 'modrinth';
+      id: string;
+      version: ProjectVersion;
+    },
+    modLoader: ModLoader,
+    gameVersions: string[],
+    ignore: string[]
+  ) {
+    const dependencies: ModrinthDependencyList = [];
+
+    await Promise.all(
+      mod.version.dependencies.map(async (dependency) => {
+        let version: ProjectVersion | undefined;
+
+        if (dependency.version_id) {
+          version = (await this.getVersion(dependency.version_id)).data;
+        }
+        if (dependency.project_id) {
+          version = await this.findVersion(
+            dependency.project_id,
+            modLoader,
+            gameVersions
+          );
+        }
+
+        if (!version) throw new Error('Dependency could not be found'); // TODO To se thingy better
+
+        dependencies.push({
+          parentId: mod.id,
+          mod: { id: version.project_id, version, provider: 'modrinth' },
+        });
+      })
+    );
+
+    const newIgnoreIds = ignore.concat(
+      ...dependencies.map((dependency) => dependency.mod.id)
+    );
+
+    await Promise.all(
+      dependencies.map(async (dependency) => {
+        const subDependencies = await this.listDependencies(
+          dependency.mod,
+          modLoader,
+          gameVersions,
+          newIgnoreIds
+        );
+
+        dependencies.push(...subDependencies);
+        newIgnoreIds.push(
+          ...subDependencies.map((dependency) => dependency.mod.id)
+        );
+      })
+    );
+
+    return dependencies;
   }
 }
 
