@@ -11,9 +11,9 @@ class ModrinthQueue {
   private api: AxiosInstance;
 
   constructor(userAgent: string) {
-    this.queue = new PQueue({ concurrency: CONCURRENCY }); // Adjust concurrency as needed
-    this.remainingRequests = 300; // Initial value, will be updated by response headers
-    this.resetTime = 0; // Initial value, will be updated by response headers
+    this.queue = new PQueue({ concurrency: CONCURRENCY });
+    this.remainingRequests = 300;
+    this.resetTime = 0;
 
     this.api = axios.create({
       baseURL: API_BASE_URL,
@@ -35,7 +35,7 @@ class ModrinthQueue {
         await new Promise((resolve) => setTimeout(resolve, waitTime * 1000));
       }
 
-      const response = await this.api.get<T>(API_BASE_URL + url);
+      const response = await this.api.get<T>(url);
       this.updateRateLimits(response);
       return response;
     };
