@@ -38,7 +38,7 @@ export type InstalledModMetadata = {
 
 export type SearchResultHit = {
   id: string;
-  provider: Provider;
+  provider: 'modrinth' | 'curseforge';
 
   name: string;
   description: string;
