@@ -273,7 +273,7 @@ export class ModrinthApi {
         if (!version) throw new Error('Dependency could not be found'); // TODO To se thingy better
 
         return {
-          parentId: mod.id,
+          dependencyType: dependency.dependency_type,
           mod: { id: version.project_id, version, provider: 'modrinth' },
         };
       })

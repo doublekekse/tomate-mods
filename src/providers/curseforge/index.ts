@@ -100,40 +100,11 @@ export class CurseforgeApi {
       slug: metadata.slug,
       authors: metadata.authors.map((author) => author.name),
 
-      dependencies: version.dependencies.map((dependency) => {
-        let dependencyType:
-          | 'required'
-          | 'optional'
-          | 'incompatible'
-          | 'embedded';
-
-        switch (dependency.relationType) {
-          case CF2FileRelationType.Include:
-          case CF2FileRelationType.EmbeddedLibrary:
-            dependencyType = 'embedded';
-            break;
-          case CF2FileRelationType.Incompatible:
-            dependencyType = 'incompatible';
-            break;
-          case CF2FileRelationType.RequiredDependency:
-            dependencyType = 'required';
-            break;
-          case CF2FileRelationType.OptionalDependency:
-            dependencyType = 'optional';
-            break;
-          default:
-            throw new Error(
-              '[tomate-mods] Unsupported dependency type: ' +
-                dependency.relationType
-            );
-        }
-
-        return {
-          dependencyType,
-          id: dependency.modId.toString(),
-          version: dependency.fileId.toString(),
-        };
-      }),
+      dependencies: version.dependencies.map((dependency) => ({
+        dependencyType: this.dependencyType(dependency.relationType),
+        id: dependency.modId.toString(),
+        version: dependency.fileId.toString(),
+      })),
 
       updateVersion,
     };
@@ -209,6 +180,32 @@ export class CurseforgeApi {
       ),
       count: search.data.pagination.totalCount,
     };
+  }
+
+  dependencyType(relationType: CF2FileRelationType) {
+    let dependencyType: 'required' | 'optional' | 'incompatible' | 'embedded';
+
+    switch (relationType) {
+      case CF2FileRelationType.Include:
+      case CF2FileRelationType.EmbeddedLibrary:
+        dependencyType = 'embedded';
+        break;
+      case CF2FileRelationType.Incompatible:
+        dependencyType = 'incompatible';
+        break;
+      case CF2FileRelationType.RequiredDependency:
+        dependencyType = 'required';
+        break;
+      case CF2FileRelationType.OptionalDependency:
+        dependencyType = 'optional';
+        break;
+      default:
+        throw new Error(
+          '[tomate-mods] Unsupported dependency type: ' + relationType
+        );
+    }
+
+    return dependencyType;
   }
 
   async findVersion(
@@ -356,7 +353,8 @@ export class CurseforgeApi {
         } = await this.api.get<CF2GetAddonResponse>(`/v1/mods/${mod.id}`);
 
         return {
-          parentId: mod.id,
+          dependencyType: this.dependencyType(dependency.relationType),
+
           mod: {
             id: mod.id,
             version,

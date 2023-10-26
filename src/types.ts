@@ -51,13 +51,20 @@ export type SearchResult = { hits: SearchResultHit[]; count: number };
 
 export type DownloadPopup = (url: string, savePath: string) => unknown;
 
+export type DependencyType =
+  | 'required'
+  | 'optional'
+  | 'incompatible'
+  | 'embedded';
+
 export type ModrinthDependencyList = {
   mod: {
     provider: 'modrinth';
     id: string;
     version: ProjectVersion;
   };
-  parentId?: string;
+
+  dependencyType: DependencyType;
 }[];
 
 export type CurseforgeDependencyList = {
@@ -67,7 +74,8 @@ export type CurseforgeDependencyList = {
     version: CF2File;
     slug: string;
   };
-  parentId?: string;
+
+  dependencyType: DependencyType;
 }[];
 
 export type DependencyList = ModrinthDependencyList | CurseforgeDependencyList;
