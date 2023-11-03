@@ -157,13 +157,16 @@ export class TomateMods {
   }
 
   async findVersion(
-    mod:
-      | { id: string; provider: 'modrinth' }
-      | { id: string; provider: 'curseforge'; slug: string },
+    mod: { id: string; provider: 'modrinth' | 'curseforge'; slug: string },
     modLoader: ModLoader,
     gameVersions: string[]
   ): Promise<
-    | { provider: 'modrinth'; id: string; version: ProjectVersion }
+    | {
+        provider: 'modrinth';
+        id: string;
+        version: ProjectVersion;
+        slug: string;
+      }
     | { provider: 'curseforge'; id: string; version: CF2File; slug: string }
   > {
     if (mod.provider === 'modrinth') {
@@ -178,6 +181,7 @@ export class TomateMods {
 
       return {
         id: mod.id,
+        slug: mod.slug,
         provider: 'modrinth',
         version,
       };
