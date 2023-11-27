@@ -3,7 +3,9 @@ import {
   CurseforgeDependencyList,
   DownloadPopup,
   InstalledModMetadata,
+  InstalledResourceMetadata,
   ModLoader,
+  Resource,
   SearchResult,
 } from '../../types';
 import {
@@ -19,7 +21,7 @@ import {
   CF2SearchModsResponse,
 } from 'curseforge-v2';
 import fs from 'fs';
-import checkModFile from '../../checkModFile';
+import checkFile from '../../checkFile';
 import { IncomingMessage } from 'http';
 import murmur2 from 'murmur2';
 
@@ -57,6 +59,25 @@ export class CurseforgeApi {
       modLoader,
       gameVersions
     );
+  }
+
+  async getInstalledResourceMetadata(
+    resource: Resource
+  ): Promise<InstalledResourceMetadata> {
+    const {
+      data: { data: metadata },
+    } = await this.api.get<CF2GetAddonResponse>(`/v1/mods/${resource.id}`);
+
+    return {
+      id: resource.id,
+      provider: resource.provider,
+      version: resource.version,
+
+      name: metadata.name,
+      description: metadata.summary,
+      authors: metadata.authors.map((author) => author.name),
+      icon: metadata.logo.url,
+    };
   }
 
   private async installedModMetadata(
@@ -110,7 +131,42 @@ export class CurseforgeApi {
     };
   }
 
-  async search(
+  async searchResource(
+    query: string,
+    queryParams: URLSearchParams
+  ): Promise<SearchResult> {
+    queryParams.set('searchFilter', query);
+
+    const {
+      data: {
+        data: searchHits,
+        pagination: { totalCount: count },
+      },
+    } = await this.api.get<CF2SearchModsResponse>(
+      `/v1/mods/search?${queryParams}`
+    );
+
+    return {
+      hits: await Promise.all(
+        searchHits.map(async (hit) => ({
+          id: hit.id.toString(),
+          provider: 'curseforge',
+
+          versions: hit.latestFiles,
+
+          name: hit.name,
+          description: hit.summary,
+          authors: hit.authors.map((author) => author.name),
+          icon: hit.logo.url,
+          slug: hit.slug,
+        }))
+      ),
+
+      count,
+    };
+  }
+
+  async searchMod(
     query: string,
     modLoader: ModLoader,
     gameVersions: string[]
@@ -130,7 +186,7 @@ export class CurseforgeApi {
     });
 
     const search = await this.api.get<CF2SearchModsResponse>(
-      `/v1/mods/search?${queryParams.toString()}`
+      `/v1/mods/search?${queryParams}`
     );
 
     return {
@@ -151,8 +207,9 @@ export class CurseforgeApi {
                 modLoader,
                 gameVersions
               ))
-            )
+            ) {
               break override;
+            }
 
             return {
               id: overrideId,
@@ -269,13 +326,14 @@ export class CurseforgeApi {
     } else {
       const url = `https://www.curseforge.com/minecraft/mc-mods/${mod.slug}/download/${mod.version.id}`;
 
-      if (!downloadPopup)
+      if (!downloadPopup) {
         throw new Error(`Can't download ${mod.slug} without a downloadPopup`);
+      }
 
       await downloadPopup(url, downloadPath);
     }
 
-    if (hash && !checkModFile(downloadPath, hash)) {
+    if (hash && !checkFile(downloadPath, hash)) {
       if (fs.existsSync(downloadPath)) fs.rmSync(downloadPath);
 
       if (--retry < 0) throw new Error('Failed to download mod');

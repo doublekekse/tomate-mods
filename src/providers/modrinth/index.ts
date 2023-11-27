@@ -1,15 +1,16 @@
 import { stringify } from 'querystring';
 import {
-  DependencyList,
   InstalledModMetadata,
+  InstalledResourceMetadata as InstalledResourceMetadata,
   ModLoader,
+  Resource as Resource,
   ModrinthDependencyList,
   SearchResult,
 } from '../../types';
 import ModrinthQueue from './modrinthQueue';
 import { ModrinthSearchResult, Project, ProjectVersion, User } from './types';
 import fs from 'fs';
-import checkModFile from '../../checkModFile';
+import checkFile from '../../checkFile';
 import axios from 'axios';
 import { IncomingMessage } from 'http';
 import crypto from 'crypto';
@@ -119,10 +120,68 @@ export class ModrinthApi {
     );
   }
 
-  async search(
+  async getInstalledResourceMetadata(
+    resource: Resource
+  ): Promise<InstalledResourceMetadata> {
+    const project = await this.api.get<Project>(`/projects/${resource.id}`);
+    const latestVersion = project.data.versions[0];
+    const teamMembers = await this.api.get<{ user: User }[]>(
+      `/project/${resource.id}/members`
+    );
+
+    return {
+      id: resource.id,
+      provider: resource.provider,
+      version: resource.version,
+
+      name: project.data.title,
+      description: project.data.description,
+      icon: project.data.icon_url,
+      authors: teamMembers.data.map((teamMember) => teamMember.user.name),
+
+      updateVersion:
+        resource.version === latestVersion ? undefined : latestVersion,
+    };
+  }
+
+  async searchResource(query: string, facets: string): Promise<SearchResult> {
+    const params = {
+      query,
+      index: 'relevance',
+      offset: 0,
+      limit: 10,
+      facets,
+    };
+
+    const searchResult = await this.api.get<ModrinthSearchResult>(
+      `/search?${stringify(params)}`
+    );
+
+    return {
+      hits: searchResult.data.hits.map((hit) => ({
+        id: hit.project_id,
+        provider: 'modrinth',
+
+        versions: hit.versions,
+
+        name: hit.title,
+        description: hit.description,
+
+        // We could load the whole team here (just like in searchMod, but I am not sure if this is a good idea?)
+        authors: [hit.author],
+        icon: hit.icon_url,
+        slug: hit.slug,
+      })),
+
+      count: searchResult.data.total_hits,
+    };
+  }
+
+  async searchMod(
     query: string,
     modLoader: ModLoader,
-    gameVersions: string[]
+    gameVersions: string[],
+    side: 'server_side' | 'client_side'
   ): Promise<SearchResult> {
     const params = {
       query,
@@ -132,7 +191,7 @@ export class ModrinthApi {
       facets: `[${buildFacet(
         'categories',
         modLoader.modrinthCategories
-      )},${buildFacet('versions', gameVersions)},${buildFacet('client_side', [
+      )},${buildFacet('versions', gameVersions)},${buildFacet(side, [
         'required',
         'optional',
       ])},["project_type:mod"]]`,
@@ -209,7 +268,7 @@ export class ModrinthApi {
       });
     });
 
-    if (!checkModFile(downloadPath, hash)) {
+    if (!checkFile(downloadPath, hash)) {
       if (fs.existsSync(downloadPath)) fs.rmSync(downloadPath);
 
       if (--retry < 0) throw new Error('Failed to download mod');
@@ -283,6 +342,6 @@ export class ModrinthApi {
   }
 }
 
-function buildFacet(name: string, data: string[]) {
-  return `[${data.map((d) => `"${name}: ${d}"`)}]`;
+function buildFacet(name: string, data: string[], operator = ':') {
+  return `[${data.map((d) => `"${name}${operator}${d}"`)}]`;
 }

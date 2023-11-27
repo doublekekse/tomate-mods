@@ -36,6 +36,21 @@ export type InstalledModMetadata = {
   | { provider: 'custom'; updateVersion: null }
 );
 
+export type Resource = {
+  provider: Provider;
+  id: string;
+  version: string;
+};
+
+export type InstalledResourceMetadata = Resource & {
+  icon?: string;
+  name: string;
+  description: string;
+  authors: string[];
+
+  updateVersion?: any;
+};
+
 export type SearchResultHit = {
   id: string;
   provider: 'modrinth' | 'curseforge';

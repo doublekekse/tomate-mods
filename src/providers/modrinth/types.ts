@@ -351,5 +351,5 @@ export type SearchResultHit = {
   server_side: string;
   /**
    * The host that this project is from, always modrinth or curseforge */
-  host: 'modrinth' | 'curseforge';
+  host: 'modrinth';
 };
