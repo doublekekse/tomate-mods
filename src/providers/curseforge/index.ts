@@ -136,6 +136,7 @@ export class CurseforgeApi {
     queryParams: URLSearchParams
   ): Promise<SearchResult> {
     queryParams.set('searchFilter', query);
+    queryParams.set('gameId', CF2GameId.Minecraft.toString());
 
     const {
       data: {
@@ -157,7 +158,7 @@ export class CurseforgeApi {
           name: hit.name,
           description: hit.summary,
           authors: hit.authors.map((author) => author.name),
-          icon: hit.logo.url,
+          icon: hit.logo?.url,
           slug: hit.slug,
         }))
       ),
