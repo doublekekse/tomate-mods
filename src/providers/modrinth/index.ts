@@ -22,10 +22,12 @@ export class ModrinthApi {
     this.api = new ModrinthQueue(userAgent);
   }
 
-  listVersions(id: string, queryParams = '') {
-    return this.api.get<ProjectVersion[]>(
-      `/project/${id}/version${queryParams}`
-    );
+  async listVersions(id: string, queryParams = '') {
+    return (
+      await this.api.get<ProjectVersion[]>(
+        `/project/${id}/version${queryParams}`
+      )
+    ).data;
   }
 
   async findModVersion(
@@ -42,8 +44,8 @@ export class ModrinthApi {
           ])}&game_versions=${JSON.stringify(gameVersions)}`
         );
 
-        if (versions.data.length > 0) {
-          return versions.data[0];
+        if (versions.length > 0) {
+          return versions[0];
         }
       }
     } catch (e) {
