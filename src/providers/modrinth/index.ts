@@ -22,15 +22,22 @@ export class ModrinthApi {
     this.api = new ModrinthQueue(userAgent);
   }
 
-  async findVersion(
+  listVersions(id: string, queryParams = '') {
+    return this.api.get<ProjectVersion[]>(
+      `/project/${id}/versions${queryParams}`
+    );
+  }
+
+  async findModVersion(
     modId: string,
     modLoader: ModLoader,
     gameVersions: string[]
   ) {
     try {
       for (let i = 0; i < modLoader.modrinthCategories.length; i++) {
-        const versions = await this.api.get<ProjectVersion[]>(
-          `/project/${modId}/version?loaders=${JSON.stringify([
+        const versions = await this.listVersions(
+          modId,
+          `?loaders=${JSON.stringify([
             modLoader.modrinthCategories[i],
           ])}&game_versions=${JSON.stringify(gameVersions)}`
         );
@@ -60,7 +67,7 @@ export class ModrinthApi {
 
     if (modLoader.overrideMods[project.id]) {
       updateVersion =
-        (await this.findVersion(
+        (await this.findModVersion(
           modLoader.overrideMods[project.id],
           modLoader,
           gameVersions
@@ -68,7 +75,7 @@ export class ModrinthApi {
     }
 
     if (!updateVersion && project.versions[0] !== mod.version) {
-      const latestVersion = await this.findVersion(
+      const latestVersion = await this.findModVersion(
         mod.id,
         modLoader,
         gameVersions
@@ -206,7 +213,9 @@ export class ModrinthApi {
         searchResult.data.hits.map(async (hit) => {
           override: if (modLoader.overrideMods[hit.project_id]) {
             const overrideId = modLoader.overrideMods[hit.project_id];
-            if (!(await this.findVersion(overrideId, modLoader, gameVersions)))
+            if (
+              !(await this.findModVersion(overrideId, modLoader, gameVersions))
+            )
               break override;
 
             const project = await this.api.get<Project>(
@@ -322,7 +331,7 @@ export class ModrinthApi {
           version = (await this.getVersion(dependency.version_id)).data;
         }
         if (dependency.project_id) {
-          version = await this.findVersion(
+          version = await this.findModVersion(
             dependency.project_id,
             modLoader,
             gameVersions

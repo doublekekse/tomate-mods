@@ -91,14 +91,14 @@ export class CurseforgeApi {
 
     if (modLoader.overrideMods[mod.id]) {
       updateVersion =
-        (await this.findVersion(mod, modLoader, gameVersions)) ?? null;
+        (await this.findModVersion(mod, modLoader, gameVersions)) ?? null;
     }
 
     if (
       !updateVersion &&
       metadata.latestFiles[0].id.toString() !== mod.version
     ) {
-      const latestVersion = await this.findVersion(
+      const latestVersion = await this.findModVersion(
         mod,
         modLoader,
         gameVersions
@@ -203,7 +203,7 @@ export class CurseforgeApi {
             );
 
             if (
-              !(await this.findVersion(
+              !(await this.findModVersion(
                 { id: overrideId },
                 modLoader,
                 gameVersions
@@ -266,18 +266,29 @@ export class CurseforgeApi {
     return dependencyType;
   }
 
-  async findVersion(
+  async listVersions(id: string, queryParams = '') {
+    try {
+      const {
+        data: { data: versions },
+      } = await this.api.get<CF2GetModFilesResponse>(
+        `v1/mods/${id}/files${queryParams}`
+      );
+
+      return versions;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async findModVersion(
     mod: { id: string },
     modLoader: ModLoader,
     gameVersions: string[]
   ) {
     try {
-      const {
-        data: {
-          data: [version],
-        },
-      } = await this.api.get<CF2GetModFilesResponse>(
-        `v1/mods/${mod.id}/files?modId=${mod.id}&gameVersion=${gameVersions[0]}&modLoaderType=${modLoader.curseforgeCategory}`
+      const [version] = await this.listVersions(
+        mod.id,
+        `?modId=${mod.id}&gameVersion=${gameVersions[0]}&modLoaderType=${modLoader.curseforgeCategory}`
       );
 
       return version;
@@ -398,7 +409,7 @@ export class CurseforgeApi {
             version: dependency.fileId,
           });
         } else {
-          version = await this.findVersion(
+          version = await this.findModVersion(
             { id: dependency.modId.toString() },
             modLoader,
             gameVersions

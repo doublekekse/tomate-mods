@@ -141,11 +141,17 @@ export class TomateMods {
       modrinthFacets: string;
     }
   ): Promise<SearchResult> {
-    const asyncModrinthSearch = this.modrinthApi.searchResource(query, opts.modrinthFacets);
+    const asyncModrinthSearch = this.modrinthApi.searchResource(
+      query,
+      opts.modrinthFacets
+    );
 
     let asyncCurseforgeSearch;
     if (this.curseforgeApi && opts.useCurseforge) {
-      asyncCurseforgeSearch = this.curseforgeApi.searchResource(query, opts.curseforgeUrlSearchParams);
+      asyncCurseforgeSearch = this.curseforgeApi.searchResource(
+        query,
+        opts.curseforgeUrlSearchParams
+      );
     } else {
       asyncCurseforgeSearch = { hits: [], count: 0 };
     }
@@ -215,7 +221,34 @@ export class TomateMods {
     return searchResults;
   }
 
-  async findVersion(
+  async listVersions(
+    resource: {
+      id: string;
+      provider: 'modrinth' | 'curseforge';
+      slug: string;
+    },
+    opts: {
+      modrinthSearchParams?: string;
+      curseforgeSearchParams?: string;
+    }
+  ) {
+    if (resource.provider === 'modrinth') {
+      return this.modrinthApi.listVersions(
+        resource.id,
+        opts.modrinthSearchParams
+      );
+    }
+    if (resource.provider === 'curseforge') {
+      if (!this.curseforgeApi) throw new NoCurseforgeApiKeyError();
+
+      return this.curseforgeApi.listVersions(
+        resource.id,
+        opts.curseforgeSearchParams
+      );
+    }
+  }
+
+  async findModVersion(
     mod: { id: string; provider: 'modrinth' | 'curseforge'; slug: string },
     modLoader: ModLoader,
     gameVersions: string[]
@@ -229,7 +262,7 @@ export class TomateMods {
     | { provider: 'curseforge'; id: string; version: CF2File; slug: string }
   > {
     if (mod.provider === 'modrinth') {
-      const version = await this.modrinthApi.findVersion(
+      const version = await this.modrinthApi.findModVersion(
         mod.id,
         modLoader,
         gameVersions
@@ -249,7 +282,7 @@ export class TomateMods {
     if (mod.provider === 'curseforge') {
       if (!this.curseforgeApi) throw new NoCurseforgeApiKeyError();
 
-      const version = await this.curseforgeApi.findVersion(
+      const version = await this.curseforgeApi.findModVersion(
         mod,
         modLoader,
         gameVersions
