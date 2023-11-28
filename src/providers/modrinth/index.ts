@@ -24,7 +24,7 @@ export class ModrinthApi {
 
   listVersions(id: string, queryParams = '') {
     return this.api.get<ProjectVersion[]>(
-      `/project/${id}/versions${queryParams}`
+      `/project/${id}/version${queryParams}`
     );
   }
 
