@@ -95,6 +95,7 @@ export class ModrinthApi {
 
       name: project.title,
       description: project.description,
+      icon: project.icon_url,
       slug: project.slug,
       authors: teamMembers.map((member) => member.user.name),
 

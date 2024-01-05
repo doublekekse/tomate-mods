@@ -120,6 +120,7 @@ export class CurseforgeApi {
       description: metadata.summary,
       slug: metadata.slug,
       authors: metadata.authors.map((author) => author.name),
+      icon: metadata.logo.url,
 
       dependencies: version.dependencies.map((dependency) => ({
         dependencyType: this.dependencyType(dependency.relationType),

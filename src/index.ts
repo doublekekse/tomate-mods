@@ -85,6 +85,7 @@ export class TomateMods {
     }
   }
 
+  // TODO: Parse icon
   async parseMod(modPath: string): Promise<InstalledModMetadata> {
     try {
       const fabricMod = await readFabricMod(modPath);

@@ -17,6 +17,7 @@ export type InstalledModMetadata = {
   provider: Provider;
   name: string;
   description: string;
+  icon?: string;
   slug: string;
   dependencies: {
     id: string;
