@@ -19,7 +19,7 @@ export type InstalledModMetadata = {
   description: string;
   slug: string;
   dependencies: {
-    id?: string | undefined;
+    id: string;
     version?: string | undefined;
     dependencyType: 'required' | 'optional' | 'incompatible' | 'embedded';
   }[];

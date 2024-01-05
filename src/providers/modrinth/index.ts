@@ -98,11 +98,26 @@ export class ModrinthApi {
       slug: project.slug,
       authors: teamMembers.map((member) => member.user.name),
 
-      dependencies: version.dependencies.map((dependency) => ({
-        id: dependency.project_id,
-        version: dependency.version_id,
-        dependencyType: dependency.dependency_type,
-      })),
+      dependencies: await Promise.all(
+        version.dependencies.map(async (dependency) => {
+          if (!dependency.project_id) {
+            if (!dependency.version_id) {
+              throw new Error('Dependency has no project and version id');
+            }
+
+            const {
+              data: { project_id },
+            } = await this.getVersion(dependency.version_id);
+            dependency.project_id = project_id;
+          }
+
+          return {
+            id: dependency.project_id,
+            version: dependency.version_id,
+            dependencyType: dependency.dependency_type,
+          };
+        })
+      ),
 
       updateVersion,
     };
