@@ -15,6 +15,7 @@ export type InstalledModMetadata = {
   id: string;
   version: string;
   provider: Provider;
+
   name: string;
   description: string;
   icon?: string;
@@ -77,7 +78,9 @@ export type ModrinthDependencyList = {
   mod: {
     provider: 'modrinth';
     id: string;
-    version: ProjectVersion;
+    slug: string;
+
+    version?: ProjectVersion;
   };
 
   dependencyType: DependencyType;
@@ -87,8 +90,9 @@ export type CurseforgeDependencyList = {
   mod: {
     provider: 'curseforge';
     id: string;
-    version: CF2File;
     slug: string;
+
+    version?: CF2File;
   };
 
   dependencyType: DependencyType;

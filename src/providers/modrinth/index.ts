@@ -356,11 +356,9 @@ export class ModrinthApi {
           );
         }
 
-        if (!version) throw new Error('Dependency could not be found'); // TODO To se thingy better
-
         return {
           dependencyType: dependency.dependency_type,
-          mod: { id: version.project_id, version, provider: 'modrinth' },
+          mod: { id: dependency.project_id, version, provider: 'modrinth' },
         };
       })
     );

@@ -417,8 +417,6 @@ export class CurseforgeApi {
           );
         }
 
-        if (!version) throw new Error('Could not find version');
-
         const {
           data: { data: metadata },
         } = await this.api.get<CF2GetAddonResponse>(`/v1/mods/${mod.id}`);
