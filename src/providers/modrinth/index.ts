@@ -347,18 +347,32 @@ export class ModrinthApi {
 
         if (dependency.version_id) {
           version = (await this.getVersion(dependency.version_id)).data;
+          dependency.project_id = version.project_id;
         }
-        if (dependency.project_id) {
+
+        if (!dependency.project_id) {
+          throw new Error();
+        }
+
+        if (!version) {
           version = await this.findModVersion(
             dependency.project_id,
             modLoader,
             gameVersions
           );
         }
+        const { data: project } = await this.api.get<Project>(
+          `/project/${mod.id}`
+        );
 
         return {
           dependencyType: dependency.dependency_type,
-          mod: { id: dependency.project_id, version, provider: 'modrinth' },
+          mod: {
+            id: dependency.project_id as string,
+            version,
+            provider: 'modrinth',
+            slug: project.slug,
+          },
         };
       })
     );
