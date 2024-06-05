@@ -1,3 +1,5 @@
+export type ProjectType = 'mod' | 'modpack' | 'resourcepack' | 'shader';
+
 export type Project = {
   /**
    * The ID of the mod, encoded as a base62 string
@@ -46,11 +48,11 @@ export type Project = {
   /**
    * The support range for the client mod - required, optional, unsupported, or unknown
    */
-  client_side: string;
+  client_side: 'required' | 'optional' | 'unsupported' | 'unknown';
   /**
    * The support range for the server mod - required, optional, unsupported, or unknown
    */
-  server_side: string;
+  server_side: 'required' | 'optional' | 'unsupported' | 'unknown';
   /**
    * The total number of downloads the mod has
    */
@@ -90,9 +92,15 @@ export type Project = {
    */
   donation_urls: Array<DonationLink>;
 
-  project_type: string;
+  /**
+   * The project type of the project
+   */
+  project_type: ProjectType;
 
-  gallery: ProjectGallery[];
+  /**
+   * A list of images that have been uploaded to the project's gallery
+   */
+  gallery?: ProjectGallery[];
 };
 
 export type License = {
@@ -208,7 +216,7 @@ export type ProjectVersion = {
   /**
    * The type of the release - alpha, beta, or release
    */
-  version_type: string;
+  version_type: 'alpha' | 'beta' | 'release';
   /**
    * A list of files available for download for this version
    */
@@ -293,9 +301,8 @@ export type SearchResultHit = {
   project_id: string;
   /**
    * The project type of the project.
-   * @enum "mod" "modpack"
    * */
-  project_type?: 'mod' | 'modpack';
+  project_type?: ProjectType;
   /**
    * The username of the author of the project
    */
@@ -350,6 +357,6 @@ export type SearchResultHit = {
    * The side type id that this project is on the server */
   server_side: string;
   /**
-   * The host that this project is from, always modrinth or curseforge */
+   * The host that this project is from, always modrinth */
   host: 'modrinth';
 };
